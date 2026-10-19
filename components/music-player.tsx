@@ -32,6 +32,21 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
   const progressRef = useRef<HTMLDivElement>(null)
   const [volume, setVolume] = useState(1)
 
+  const playAudioSafely = () => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const playRequest = audio.play()
+    playRequest.catch((error: DOMException) => {
+      // Browsers reject a play request when a new source is loaded immediately after it.
+      // That is expected during track changes and should not show as a console error.
+      if (error.name !== "AbortError") {
+        console.error("Error playing audio:", error)
+        setIsPlaying(false)
+      }
+    })
+  }
+
   useEffect(() => {
     // Extract dominant color from the album art and set background gradient
     const img = new Image()
@@ -47,31 +62,40 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
       }
     }
 
-    // Reset audio player when song changes
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0
-      setCurrentTime(0)
+    // Reset the audio source when the song changes. If playback is active,
+    // wait until the new source is ready before starting it.
+    const audio = audioRef.current
+    if (!audio) return
 
-      if (isPlaying) {
-        audioRef.current.play().catch((error) => {
-          console.error("Error playing audio:", error)
-          setIsPlaying(false)
-        })
-      }
+    let cancelled = false
+    const playWhenReady = () => {
+      if (!cancelled && isPlaying) playAudioSafely()
     }
-  }, [song, isPlaying, setIsPlaying])
+
+    audio.pause()
+    audio.currentTime = 0
+    setCurrentTime(0)
+    audio.load()
+
+    if (isPlaying) {
+      audio.addEventListener("canplay", playWhenReady, { once: true })
+    }
+
+    return () => {
+      cancelled = true
+      audio.removeEventListener("canplay", playWhenReady)
+      audio.pause()
+    }
+  }, [song])
 
   // Handle play/pause
   useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play().catch((error) => {
-          console.error("Error playing audio:", error)
-          setIsPlaying(false)
-        })
-      } else {
-        audioRef.current.pause()
-      }
+    if (!audioRef.current) return
+
+    if (isPlaying) {
+      playAudioSafely()
+    } else {
+      audioRef.current.pause()
     }
   }, [isPlaying, setIsPlaying])
 
@@ -123,6 +147,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
   return (
     <div className="now-playing-section">
       <div className="song-details">
+        <div className="now-playing-label">Now playing</div>
         <h2>{song.title}</h2>
         <p>{song.artistName}</p>
       </div>
@@ -184,7 +209,9 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
             </Dropdown.Menu>
           </Dropdown>
 
-          <button 
+          <button
+            className="player-skip-btn"
+            aria-label="Previous song"
             onClick={onPrevious} 
             style={{
               background: 'none',
@@ -201,13 +228,15 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
             </svg>
           </button>
 
-          <button 
+          <button
+            className="play-pause-control"
+            aria-label={isPlaying ? "Pause song" : "Play song"}
             onClick={() => setIsPlaying(!isPlaying)} 
             style={{
               width: '48px',
               height: '48px',
               borderRadius: '50%',
-              backgroundColor: '#1DB954',
+              backgroundColor: '#F4FBF8',
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
@@ -216,17 +245,19 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
             }}
           >
             {isPlaying ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#FFFFFF" viewBox="0 0 16 16">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#0B1719" viewBox="0 0 16 16">
                 <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#FFFFFF" viewBox="0 0 16 16">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#0B1719" viewBox="0 0 16 16">
                 <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
               </svg>
             )}
           </button>
 
-          <button 
+          <button
+            className="player-skip-btn"
+            aria-label="Next song"
             onClick={onNext} 
             style={{
               background: 'none',
@@ -243,7 +274,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({
             </svg>
           </button>
 
-          <div style={{ 
+          <div className="volume-control" style={{ 
             display: 'flex', 
             alignItems: 'center', 
             gap: '8px',
