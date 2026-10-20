@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tech Music">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#162842"/>
+      <stop offset="1" stop-color="#08111f"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="16" y1="12" x2="50" y2="51" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#77f0ff"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <path d="M37 14v27.5a8.5 8.5 0 1 1-4-7.2V22l18-5v21.5a8.5 8.5 0 1 1-4-7.2V12l-10 2Z" fill="url(#accent)"/>
+  <circle cx="24.5" cy="49" r="4.5" fill="#f6f7ff"/>
+  <circle cx="42.5" cy="44" r="4.5" fill="#f6f7ff"/>
+</svg>
