@@ -11,7 +11,7 @@ The interface includes:
 - A now-playing panel with album art
 - Previous, play/pause, next, seek, and volume controls
 - Responsive mobile navigation
-- Dynamic background colours derived from the current cover image
+- Dynamic background colours derived from the current cover image.
 
 ## Features
 
